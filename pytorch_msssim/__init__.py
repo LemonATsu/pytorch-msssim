@@ -32,7 +32,7 @@ def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False,
     else:
         L = val_range
 
-    padd = 0
+    padd = window_size // 2
     (_, channel, height, width) = img1.size()
     if window is None:
         real_size = min(window_size, height, width)
@@ -54,16 +54,14 @@ def ssim(img1, img2, window_size=11, window=None, size_average=True, full=False,
 
     v1 = 2.0 * sigma12 + C2
     v2 = sigma1_sq + sigma2_sq + C2
-    cs = v1 / v2  # contrast sensitivity
+    cs = torch.mean(v1 / v2)  # contrast sensitivity
 
     ssim_map = ((2 * mu1_mu2 + C1) * v1) / ((mu1_sq + mu2_sq + C1) * v2)
 
     if size_average:
-        cs = cs.mean()
         ret = ssim_map.mean()
     else:
-        cs = cs.mean(1).mean(1).mean(1)
-        ret = ssim_map.mean(1).mean(1).mean(1)
+        ret = ssim_map
 
     if full:
         return ret, cs
@@ -103,7 +101,7 @@ def msssim(img1, img2, window_size=11, size_average=True, val_range=None, normal
     pow2 = ssims ** weights
 
     # From Matlab implementation https://ece.uwaterloo.ca/~z70wang/research/iwssim/
-    output = torch.prod(pow1[:-1]) * pow2[-1]
+    output = torch.prod(pow1[:-1] * pow2[-1])
     return output
 
 
